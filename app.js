@@ -43,10 +43,11 @@ function MainCtrl ($scope,$http) {
     ["band_level", "550"]
    ]}]
   };
-  var height = 20;
-  var radius = height / 2;
-  var width = 500;
-  //var scaleFactor = width / 100;
+
+  $scope.height = 20;
+  $scope.width = 500;
+  $scope.radius = $scope.height / 2;
+  $scope.viewbox = "0 0 "+$scope.width+" "+$scope.height;
 
   $scope.geneData = $http.post(url, data).
     then(function(response) {
@@ -54,51 +55,24 @@ function MainCtrl ($scope,$http) {
       $scope.geneData.forEach(function(gene){
         // extract and append chromosome id
         gene.chromosome = gene.band_label.split(/[a-z]/)[0];
-        
         // add in relative start and stop 
         var chromosome = $scope.genes.filter(function(x){return x.chromosome == gene.chromosome})[0];
-        gene.rel_start = gene.genomic_coordinates.start / chromosome.stop_pos * width;
-        gene.rel_stop = gene.genomic_coordinates.stop / chromosome.stop_pos * width;
+        gene.rel_start = gene.genomic_coordinates.start / chromosome.stop_pos * $scope.width;
+        gene.rel_stop = gene.genomic_coordinates.stop / chromosome.stop_pos * $scope.width;
         gene.rel_density = (gene.density / 25 + 1) / 5;
       });
       $scope.selectedChromosomes = $scope.geneData;
   })
-
+  
   $scope.updateChromosome = function (selectedChromosome){
     $scope.selectedChromosomes = $scope.geneData.filter(function(gene){
       return (gene.chromosome == selectedChromosome);
     });
-
     var gene = $scope.genes.filter(
       function(gene){return gene.chromosome == selectedChromosome;}
     )[0]
     var rel_centromere_pos = gene.centromere_pos / gene.stop_pos;
-
-    d3.selectAll(".p_arm")
-      .attr('width', rel_centromere_pos * width)
-      .attr('fill','lightblue')
-      .attr('rx', radius).attr('ry', radius)
-
-    d3.selectAll(".q_arm")
-      .attr('x', rel_centromere_pos * width)
-      .attr('width', (1 - rel_centromere_pos) * width)
-      .attr('fill','lightblue')
-      .attr('rx', radius).attr('ry', radius)
-      
-    d3.selectAll('rect').attr('y',0)
-      .attr('height', height)
-
-      // Append arc-paths to cover bands at centromeres and telomeres
-        // P_arm telomere
-        d3.selectAll(".p_telomere_arc").attr('d',"M"+ radius +",0 A" + radius + "," + radius + " 0 0,0 "+radius+","+ height +"L0 "+ height +" L0 0 Z"); 
-
-        // centromere
-        d3.selectAll(".centromere_arc").attr('d',"M"+ (rel_centromere_pos*width-radius) +",0 A" + radius + "," + radius + " 0 0,1 "+(rel_centromere_pos*width-radius)+","+ height +" L"+(rel_centromere_pos*width+radius)+","+ height +" A" + radius + "," + radius + " 0 0,1 "+(rel_centromere_pos*width+radius)+",0 L"+(rel_centromere_pos*width-radius)+" 0 Z"); 
-
-        // Q_arm telomere
-        d3.selectAll(".q_telomere_arc").attr('d',"M"+(width-radius)+",0 A" + radius + "," + radius + " 0 0,1 "+(width-radius)+","+ height +" L"+width+" "+ height +" L"+width+" 0 Z");
-
-      d3.selectAll('path').attr('fill','red');
+    $scope.rel_centromere_pos = rel_centromere_pos * $scope.width;
   };
 }
 
@@ -110,5 +84,5 @@ angular
       templateUrl: 'templates/ideogram.html'
     };
   })
-  ;
+;
 
