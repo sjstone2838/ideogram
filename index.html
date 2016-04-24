@@ -1,0 +1,58 @@
+<!doctype html>
+<html ng-app="ideogram">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>SB Ideogram</title>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="styles.css">
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.js"></script>
+        <script src="app.js"></script>
+    </head>
+    <body ng-controller="MainCtrl">
+        
+        <h4> SolveBio Ideogram </h4>
+
+        Select Human Chromosome
+        <select ng-model="selectedChromosome" ng-change="updateChromosome(selectedChromosome)">
+            <option ng-repeat="gene in genes" value="{{gene.chromosome}}">{{gene.chromosome}}</option>
+        </select>
+
+        <!-- For Testing Purposes
+        <table>
+            <tr> 
+                <th> chromosome </th>
+                <th> band_label </th>
+                <th> arm </th>
+                <th> density </th>
+                <th> rel_density </th>
+                <th> genomic_coordinates.start </th>
+                <th> genomic_coordinates.stop </th>
+                <th> rel_start </th>
+                <th> rel_stop </th>
+            </tr>
+            <tr ng-repeat="gene in selectedChromosomes"> 
+                <th> {{gene.chromosome}}</th>
+                <th> {{gene.band_label}}</th>
+                <th> {{gene.arm}}</th>
+                <th> {{gene.density}}</th>
+                <th> {{gene.rel_density}}</th>
+                <th> {{gene.genomic_coordinates.start | number }}</th>
+                <th> {{gene.genomic_coordinates.stop | number }}</th>
+                <th> {{gene.rel_start | number:2 }} %</th>
+                <th> {{gene.rel_stop | number:2 }} %</th>
+            </tr>
+        </table> -->
+
+        <svg viewbox="0 0 500 20" ideogram></svg>
+        <br>
+        <hr>
+        <br>
+        <svg viewbox="0 0 500 20" ideogram></svg>
+
+    </body>
+</html>

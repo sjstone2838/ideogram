@@ -1,0 +1,9 @@
+
+<rect x='0' y='0' width='100' height='20' fill='blue' class="p_arm"></rect>
+<rect x='100' y='0' width='100' height='20' fill='red' class="q_arm"></rect>
+
+<rect ng-repeat="gene in selectedChromosomes" x='{{gene.rel_start}}' y='0' width='{{gene.rel_stop - gene.rel_start}}' height="20" fill='black' fill-opacity='{{gene.rel_density}}'></rect>
+
+<path class='p_telomere_arc'></path>
+<path class='centromere_arc'></path>
+<path class='q_telomere_arc'></path>
