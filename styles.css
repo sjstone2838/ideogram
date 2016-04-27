@@ -1,10 +1,6 @@
-rect{
-  y: 0;
-}
-
-.arm{
-  fill: white;
-  stroke: grey;
+.arm {
+  fill: none;
+  stroke: lightgrey;
   stroke-width: 1;
 }
 
@@ -12,10 +8,21 @@ rect{
   fill: black;
 }
 
-.arc{
+path{
   fill: white;
 }
 
+
+text{
+  fill: black;
+  fill-opacity: 0.0;
+  font-size: 6pt;
+}
+
 .active{
-  fill: lightblue;
+  fill-opacity: 1.0;
+}
+
+rect.active{
+  fill: blue;
 }

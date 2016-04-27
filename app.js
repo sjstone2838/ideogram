@@ -3,86 +3,177 @@
 var ideogram = angular.module('ideogram',[]);
 
 function MainCtrl ($scope,$http) {
-  // length from https://genome.ucsc.edu/goldenpath/help/hg19.chrom.sizes
-  // centromere position from https://en.wikipedia.org/wiki/Centromere
-  $scope.genes = [
-    {chromosome: 1 , centromere_pos:   125000000 , stop_pos:   249250621},
-    {chromosome: 2 , centromere_pos:   93300000  , stop_pos:   243199373},
-    {chromosome: 3 , centromere_pos:   91000000  , stop_pos:   198022430},
-    {chromosome: 4 , centromere_pos:   50400000  , stop_pos:   191154276},
-    {chromosome: 5 , centromere_pos:   48400000  , stop_pos:   180915260},
-    {chromosome: 6 , centromere_pos:   61000000  , stop_pos:   171115067},
-    {chromosome: 7 , centromere_pos:   59900000  , stop_pos:   159138663},
-    {chromosome: 8 , centromere_pos:   45600000  , stop_pos:   146364022},
-    {chromosome: 9 , centromere_pos:   49000000  , stop_pos:   141213431},
-    {chromosome: 10  , centromere_pos:   40200000  , stop_pos:   135534747},
-    {chromosome: 11  , centromere_pos:   53700000  , stop_pos:   135006516},
-    {chromosome: 12  , centromere_pos:   35800000  , stop_pos:   133851895},
-    {chromosome: 13  , centromere_pos:   17900000  , stop_pos:   115169878},
-    {chromosome: 14  , centromere_pos:   17600000  , stop_pos:   107349540},
-    {chromosome: 15  , centromere_pos:   19000000  , stop_pos:   102531392},
-    {chromosome: 16  , centromere_pos:   36600000  , stop_pos:   90354753},
-    {chromosome: 17  , centromere_pos:   24000000  , stop_pos:   81195210},
-    {chromosome: 18  , centromere_pos:   17200000  , stop_pos:   78077248},
-    {chromosome: 19  , centromere_pos:   26500000  , stop_pos:   63025520},
-    {chromosome: 20  , centromere_pos:   27500000  , stop_pos:   59128983},
-    {chromosome: 21  , centromere_pos:   13200000  , stop_pos:   48129895},
-    {chromosome: 22  , centromere_pos:   14700000  , stop_pos:   51304566},
-  ];
-  var url = 'https://api.solvebio.com/v1/datasets/ISCN/1.1.0-2015-01-05/Ideograms/data?access_token=98e8f6ba570311e4bab59f6dc3060e21';
+  var url = 'https://api.solvebio.com/v1/datasets/ISCN/1.1.0-2015-01-05/Ideograms/data?access_token=98e8f6ba570311e4bab59f6dc3060e21&limit=10000';
   var data = {
    'fields': [
     "arm",
     "band_label",
     "genomic_coordinates.start",
     "genomic_coordinates.stop",
-    "density"
+    "genomic_coordinates.chromosome",
+    "density",
    ],
+   'limit': "10000",
    'filters': [{and: [
-    // ["genomic_coordinates.chromosome", "19"],
+    // ["genomic_coordinates.chromosome", "7"],
     ["band_level", "550"]
    ]}]
   };
 
   $scope.height = 20;
   $scope.width = 500;
+  var widthOffset = 75;
   $scope.radius = $scope.height / 2;
   $scope.viewbox = "0 0 "+$scope.width+" "+$scope.height;
+  $scope.arms = [];
 
-  $scope.geneData = $http.post(url, data).
+  $http.post(url,data).
     then(function(response) {
-      $scope.geneData = response.data.results;
-      $scope.geneData.forEach(function(gene){
-        // extract and append chromosome id
-        gene.chromosome = gene.band_label.split(/[a-z]/)[0];
-        // add in relative start and stop 
-        var chromosome = $scope.genes.filter(function(x){return x.chromosome == gene.chromosome})[0];
-        gene.rel_start = gene.genomic_coordinates.start / chromosome.stop_pos * $scope.width;
-        gene.rel_stop = gene.genomic_coordinates.stop / chromosome.stop_pos * $scope.width;
-        gene.rel_density = (gene.density / 25 + 1) / 5;
+      $scope.bands = response.data.results;
+
+      $scope.bands.forEach(function(band){
+        var arm = $scope.arms.filter(function(x){
+          return x.chromosome == band.genomic_coordinates.chromosome &&
+           x.arm == band.arm
+        })[0];
+        
+        if (!arm){
+          var arm = {
+            chromosome: band.genomic_coordinates.chromosome,
+            arm: band.arm,
+            start: band.genomic_coordinates.start,
+            stop: band.genomic_coordinates.stop,
+          };
+          $scope.arms.push(arm);
+        } else {
+          if (band.genomic_coordinates.stop > arm.stop){
+            arm.stop = band.genomic_coordinates.stop
+          } 
+          if (band.genomic_coordinates.start < arm.start){
+            arm.start = band.genomic_coordinates.start
+          }
+        }
       });
-      $scope.selectedChromosomes = $scope.geneData;
+      $scope.chromosomes = _.range(1,23);
+      $scope.chromosomes.push('X','Y');
+
   })
   
   $scope.updateChromosome = function (selectedChromosome){
-    $scope.selectedChromosomes = $scope.geneData.filter(function(gene){
-      return (gene.chromosome == selectedChromosome);
+    var p_arm = $scope.arms.filter(function(arm){
+      return arm.chromosome == selectedChromosome && arm.arm == 'p';
+    })[0];
+    var q_arm = $scope.arms.filter(function(arm){
+      return arm.chromosome == selectedChromosome && arm.arm == 'q';
+    })[0];
+    var bands = $scope.bands.filter(function(band){
+      return band.genomic_coordinates.chromosome == selectedChromosome;
     });
-    var gene = $scope.genes.filter(
-      function(gene){return gene.chromosome == selectedChromosome;}
-    )[0]
-    var rel_centromere_pos = gene.centromere_pos / gene.stop_pos;
-    $scope.rel_centromere_pos = rel_centromere_pos * $scope.width;
-  };
+
+    d3.selectAll('rect').remove();
+    d3.selectAll('g').remove();
+
+    var xScale = d3.scale.linear()
+      .domain([0,q_arm.stop])
+      .range([0,$scope.width - widthOffset]);
+
+    var densityScale = d3.scale.linear()
+      .domain([0,100])
+      .range([0.0,1.0]);
+    
+    // // p arm
+    // var p_arm_svg = d3.select("#ideogram")
+    //   .selectAll('rect')
+    //   .data('p_arm');
+
+    // //p_arm_svg.exit().remove();
+
+    // p_arm_svg.enter()
+    //   .append('rect')
+    //   .attr('x',0)
+    //   .attr('width',xScale(p_arm.stop))
+    //   .attr('class','arm');
+
+     // p arm
+    d3.select("#ideogram")
+      .append('rect')
+      .attr('x', 0)
+      .attr('width',xScale(p_arm.stop))
+      .attr('class','arm');
+
+    // q arm
+    d3.select("#ideogram")
+      .append('rect')
+      .attr('x', xScale(q_arm.start))
+      .attr('width',xScale(q_arm.stop - q_arm.start))
+      .attr('class','arm');
+
+    // band container
+    d3.select('#ideogram')
+      .selectAll('g')
+      .data(bands)
+      .enter()
+      .append('g')
+      .attr("transform", function (band){ 
+        return "translate(" + xScale(band.genomic_coordinates.start) + ",0)";})
+      
+    // band
+    d3.selectAll('g')
+      .append('rect')
+      .attr('width',0)
+      .attr('width', function(band){
+        return xScale(band.genomic_coordinates.stop - band.genomic_coordinates.start);
+      })
+      .attr('fill-opacity',function(band){
+        return densityScale(band.density);
+      })
+      .attr('class','band')
+      .on("mouseover", function() { 
+        d3.select(this).classed('active', true);
+        d3.select(this.parentNode).selectAll('text').classed('active', true);
+      })
+      .on("mouseout", function() { 
+        d3.select(this).classed('active', false);
+        d3.select(this.parentNode).selectAll('text').classed('active', false);
+      });
+
+    // band label
+    d3.selectAll('g').append('text').attr('y',"4em").text(function(band){ return "Band: "+ band.band_label });
+    d3.selectAll('g').append('text').attr('y',"5em").text(function(band){ return "Start: "+ band.genomic_coordinates.start });
+    d3.selectAll('g').append('text').attr('y',"6em").text(function(band){ return "Start: "+ band.genomic_coordinates.stop });
+    d3.selectAll('g').append('text').attr('y',"7em").text(function(band){ return "Density: "+ band.density });
+
+    // format all arms and bands
+    d3.selectAll('rect')
+      .attr('y',0)
+      .attr('height',$scope.height)
+    d3.selectAll(".arm")
+      .attr('rx',$scope.height / 2);
+
+    // telomere and centromere cover stubs
+    var radius = $scope.radius;
+    var height = $scope.height;
+    var width = $scope.width-widthOffset;
+    
+    d3.select('#ideogram').append('path')
+     .attr('d',"M "+radius+",0 A"+radius+","+radius+" 0 0,0 "+radius+","+height+" L0 "+height+" L0 0 Z");
+
+   d3.select('#ideogram').append('path')
+    .attr('d', "M"+(xScale(p_arm.stop)-radius)+",0 A"+radius+","+radius+" 0 0,1 "+(xScale(p_arm.stop)-radius)+","+height+" L"+(xScale(p_arm.stop)+radius)+","+height+" A"+radius+","+radius+" 0 0,1 "+(xScale(p_arm.stop)+radius)+",0 L"+(xScale(p_arm.stop)-radius)+" 0 Z");
+
+   d3.select('#ideogram').append('path')
+    .attr('d', "M"+(width-radius)+",0 A"+radius+","+radius+" 0 0,1 "+(width-radius)+","+height+" L"+width+" "+height+" L"+width+" 0 Z");
+  }
+
 }
 
 angular
   .module('ideogram')
   .controller('MainCtrl', MainCtrl)
-  .directive('ideogram', function(){
-    return {
-      templateUrl: 'templates/ideogram.html'
-    };
-  })
+  // .directive('ideogram', function(){
+  //   return {
+  //     templateUrl: 'templates/ideogram.html'
+  //   };
+  // })
 ;
 
