@@ -1,5 +1,5 @@
 <!doctype html>
-<html ng-app="ideogram">
+<html ng-app="app">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
@@ -18,41 +18,14 @@
         <div class="container-fluid">
             <h4> SolveBio Ideogram </h4>
 
-                Select Human Chromosome
-                <select ng-model="selectedChromosome" ng-change="updateChromosome(selectedChromosome)">
-                    <option ng-repeat="chromosome in chromosomes" value="{{chromosome}}">{{chromosome}}</option>
-                </select>
+            Select Human Chromosome
+            <select ng-model="selectedChromosome" ng-change="updateChromosome(selectedChromosome)">
+                <option ng-repeat="chromosome in chromosomes" value="{{chromosome}}">{{chromosome}}</option>
+            </select>
 
-
-            <!-- For Testing Purposes
-            <table>
-                <tr> 
-                    <th> chromosome </th>
-                    <th> band_label </th>
-                    <th> arm </th>
-                    <th> density </th>
-                    <th> rel_density </th>
-                    <th> genomic_coordinates.start </th>
-                    <th> genomic_coordinates.stop </th>
-                    <th> rel_start </th>
-                    <th> rel_stop </th>
-                </tr>
-                <tr ng-repeat="gene in selectedChromosomes"> 
-                    <th> {{gene.chromosome}}</th>
-                    <th> {{gene.band_label}}</th>
-                    <th> {{gene.arm}}</th>
-                    <th> {{gene.density}}</th>
-                    <th> {{gene.rel_density}}</th>
-                    <th> {{gene.genomic_coordinates.start | number }}</th>
-                    <th> {{gene.genomic_coordinates.stop | number }}</th>
-                    <th> {{gene.rel_start | number:2 }} %</th>
-                    <th> {{gene.rel_stop | number:2 }} %</th>
-                </tr>
-            </table> -->
             <div class="row">
-                <div class="col-xs-offset-1 col-xs-10" style="padding: 20px;">
-                   <!--  <svg ng-if="selectedChromosome" viewbox="0 0 500 20" ideogram></svg> -->
-                    <svg viewbox="0 0 500 100" id='ideogram'></svg>
+                <div class="col-xs-offset-1 col-xs-10" style="padding: 20px 0px 20px 0px;">
+                    <ideogram></ideogram>
                 </div>
             </div>
         </div>
