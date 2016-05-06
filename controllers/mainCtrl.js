@@ -1,5 +1,7 @@
-function MainCtrl ($scope,$http) {
-  var url = 'https://api.solvebio.com/v1/datasets/ISCN/1.1.0-2015-01-05/Ideograms/data?access_token=98e8f6ba570311e4bab59f6dc3060e21&limit=10000';
+function MainCtrl ($scope,$http, ENV) {
+
+  var url = ENV.url+'?access_token='+ENV.accessToken//+'&limit=10000';
+
   var data = {
    'fields': [
     "arm",
@@ -11,7 +13,8 @@ function MainCtrl ($scope,$http) {
    ],
    'limit': "10000",
    'filters': [{and: [
-    ["band_level", "550"]
+    ["band_level", "550"],
+    //["genomic_coordinates.chromosome", 3],
    ]}]
   };
   
@@ -140,7 +143,7 @@ function MainCtrl ($scope,$http) {
   }
 }
 
-angular.module('app').controller('MainCtrl',['$scope','$http', MainCtrl]); 
+angular.module('app').controller('MainCtrl',['$scope','$http', 'ENV', MainCtrl]); 
 
 
 

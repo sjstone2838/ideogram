@@ -8,4 +8,4 @@ var width = fullWidth - widthOffset;
 var radius = height / 2;
 var dur = 1500;
 
-var app = angular.module('app',[]);
+var app = angular.module('app',['config']);
