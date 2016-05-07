@@ -1,66 +1,78 @@
 function MainCtrl ($scope,$http, ENV) {
 
-  var url = ENV.url+'?access_token='+ENV.accessToken//+'&limit=10000';
-
-  var data = {
-   'fields': [
-    "arm",
-    "band_label",
-    "genomic_coordinates.start",
-    "genomic_coordinates.stop",
-    "genomic_coordinates.chromosome",
-    "density",
-   ],
-   'limit': "10000",
-   'filters': [{and: [
-    ["band_level", "550"],
-    //["genomic_coordinates.chromosome", 3],
-   ]}]
-  };
-  
   $scope.viewbox = "0 0 "+fullWidth+" "+height;
   $scope.arms = [];
   $scope.bands = [];
-
-  $http.post(url,data).
-    then(function(response) {
-      $scope.bands = response.data.results;
-
-      $scope.bands.forEach(function(band){
-        var arm = $scope.arms.filter(function(x){
-          return x.chromosome == band.genomic_coordinates.chromosome &&
-           x.arm == band.arm
-        })[0];
-        
-        if (!arm){
-          var arm = {
-            chromosome: band.genomic_coordinates.chromosome,
-            arm: band.arm,
-            start: band.genomic_coordinates.start,
-            stop: band.genomic_coordinates.stop,
-          };
-          $scope.arms.push(arm);
-        } else {
-          if (band.genomic_coordinates.stop > arm.stop){
-            arm.stop = band.genomic_coordinates.stop
-          } 
-          if (band.genomic_coordinates.start < arm.start){
-            arm.start = band.genomic_coordinates.start
-          }
-        }
-      });
-      $scope.chromosomes = _.range(1,23);
-      $scope.chromosomes.push('X','Y');
-  })
+  $scope.chromosomes = _.range(1,23);
+  $scope.chromosomes.push('X','Y');
+  // Keep track of viewed chromosomes to avoid extra API calls
+  var viewedChromosomes = [];
+  var url = ENV.url+'?access_token='+ENV.accessToken//+'&limit=10000';
 
   $scope.updateChromosome = function (selectedChromosome){
+    if (viewedChromosomes.indexOf(selectedChromosome) == -1) {
+      viewedChromosomes.push(selectedChromosome);
+      var data = {
+       'fields': [
+        "arm",
+        "band_label",
+        "genomic_coordinates.start",
+        "genomic_coordinates.stop",
+        "genomic_coordinates.chromosome",
+        "density",
+       ],
+       'limit': "1000",
+       'filters': [{and: [
+        ["band_level", "550"],
+        ["genomic_coordinates.chromosome", selectedChromosome],
+       ]}]
+      };
+      $http.post(url,data).then(function(response) {
+        selectedBands = response.data.results;
+        selectedBands.forEach(function(band){
+          $scope.bands.push(band);
+        });
+
+        selectedBands.forEach(function(band){
+          var arm = $scope.arms.filter(function(x){
+            return x.chromosome == band.genomic_coordinates.chromosome &&
+             x.arm == band.arm
+          })[0];
+          
+          if (!arm){
+            var arm = {
+              chromosome: band.genomic_coordinates.chromosome,
+              arm: band.arm,
+              start: band.genomic_coordinates.start,
+              stop: band.genomic_coordinates.stop,
+            };
+            $scope.arms.push(arm);
+          } else {
+            if (band.genomic_coordinates.stop > arm.stop){
+              arm.stop = band.genomic_coordinates.stop
+            } 
+            if (band.genomic_coordinates.start < arm.start){
+              arm.start = band.genomic_coordinates.start
+            }
+          }
+        });
+        renderIdeogram(selectedChromosome);
+      });
+    } else {
+      renderIdeogram(selectedChromosome);
+    }
+  }
+  
+  function renderIdeogram(selectedChromosome){
     var p_arm = $scope.arms.filter(function(arm){
       return arm.chromosome == selectedChromosome && arm.arm == 'p';
     })[0];
     var q_arm = $scope.arms.filter(function(arm){
       return arm.chromosome == selectedChromosome && arm.arm == 'q';
     })[0];
-     $scope.selectedBands = $scope.bands.filter(function(band){
+    
+    //console.log($scope.bands)
+    $scope.selectedBands = $scope.bands.filter(function(band){
       return band.genomic_coordinates.chromosome == selectedChromosome;
     });
 
@@ -76,14 +88,10 @@ function MainCtrl ($scope,$http, ENV) {
     
      // p arm
     d3.selectAll(".p_arm")
-      .transition()
-      .duration(dur)
       .attr('width',xScale(p_arm.stop))
 
     // q arm
     d3.selectAll(".q_arm")
-      .transition()
-      .duration(dur)
       .attr('x', xScale(q_arm.start))
       .attr('width',xScale(q_arm.stop - q_arm.start))
 
@@ -111,8 +119,6 @@ function MainCtrl ($scope,$http, ENV) {
         d3.select(this).classed('active', false);
         d3.select(this.parentNode).selectAll('text').classed('active', false);
       })
-      .transition()
-      .duration(dur)
       .attr('fill-opacity',function(band){
         return densityScale(band.density);
       })
@@ -135,12 +141,13 @@ function MainCtrl ($scope,$http, ENV) {
     d3.selectAll('svg').append('path')
      .attr('d',"M "+radius+",0 A"+radius+","+radius+" 0 0,0 "+radius+","+height+" L0 "+height+" L0 0 Z");
 
-   d3.selectAll('svg').append('path')
-    .attr('d', "M"+(xScale(p_arm.stop)-radius)+",0 A"+radius+","+radius+" 0 0,1 "+(xScale(p_arm.stop)-radius)+","+height+" L"+(xScale(p_arm.stop)+radius)+","+height+" A"+radius+","+radius+" 0 0,1 "+(xScale(p_arm.stop)+radius)+",0 L"+(xScale(p_arm.stop)-radius)+" 0 Z");
+    d3.selectAll('svg').append('path')
+      .attr('d', "M"+(xScale(p_arm.stop)-radius)+",0 A"+radius+","+radius+" 0 0,1 "+(xScale(p_arm.stop)-radius)+","+height+" L"+(xScale(p_arm.stop)+radius)+","+height+" A"+radius+","+radius+" 0 0,1 "+(xScale(p_arm.stop)+radius)+",0 L"+(xScale(p_arm.stop)-radius)+" 0 Z");
 
-   d3.selectAll('svg').append('path')
-    .attr('d', "M"+(width-radius)+",0 A"+radius+","+radius+" 0 0,1 "+(width-radius)+","+height+" L"+width+" "+height+" L"+width+" 0 Z");
+    d3.selectAll('svg').append('path')
+      .attr('d', "M"+(width-radius)+",0 A"+radius+","+radius+" 0 0,1 "+(width-radius)+","+height+" L"+width+" "+height+" L"+width+" 0 Z");
   }
+
 }
 
 angular.module('app').controller('MainCtrl',['$scope','$http', 'ENV', MainCtrl]); 
