@@ -35,10 +35,14 @@
                 <option ng-repeat="chromosome in chromosomes" value="{{chromosome}}">{{chromosome}}</option>
             </select>
 
-            <div class="row">
+            <div ng-hide="loading" class="row">
                 <div class="col-xs-offset-1 col-xs-10" style="padding: 20px 0px 20px 0px;">
                     <ideogram></ideogram>
                 </div>
+            </div>
+            <div ng-show="loading" style="text-align:center;">
+                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate">
+                </span>
             </div>
         </div>
     </body>

@@ -8,9 +8,11 @@ function MainCtrl ($scope,$http, ENV) {
   // Keep track of viewed chromosomes to avoid extra API calls
   var viewedChromosomes = [];
   var url = ENV.url+'?access_token='+ENV.accessToken//+'&limit=10000';
+  $scope.loading = false;
 
   $scope.updateChromosome = function (selectedChromosome){
     if (viewedChromosomes.indexOf(selectedChromosome) == -1) {
+      $scope.loading = true;
       viewedChromosomes.push(selectedChromosome);
       var data = {
        'fields': [
@@ -26,6 +28,7 @@ function MainCtrl ($scope,$http, ENV) {
         ["band_level", "550"],
         ["genomic_coordinates.chromosome", selectedChromosome],
        ]}]
+
       };
       $http.post(url,data).then(function(response) {
         selectedBands = response.data.results;
@@ -56,6 +59,7 @@ function MainCtrl ($scope,$http, ENV) {
             }
           }
         });
+        $scope.loading = false;
         renderIdeogram(selectedChromosome);
       });
     } else {
@@ -125,10 +129,18 @@ function MainCtrl ($scope,$http, ENV) {
       .attr('class','band')
 
     // band label
-    d3.selectAll('g').append('text').attr('y',"4em").text(function(band){ return "Band: "+ band.band_label });
-    d3.selectAll('g').append('text').attr('y',"5em").text(function(band){ return "Start Coordinate: "+ band.genomic_coordinates.start });
-    d3.selectAll('g').append('text').attr('y',"6em").text(function(band){ return "Stop Coordinate: "+ band.genomic_coordinates.stop });
-    d3.selectAll('g').append('text').attr('y',"7em").text(function(band){ return "Density (BPHS): "+ band.density });
+    d3.selectAll('g').append('text').attr('y',"4em").text(function(band){ 
+      return "Band: "+ band.band_label 
+    });
+    d3.selectAll('g').append('text').attr('y',"5em").text(function(band){ 
+      return "Start Coordinate: "+ band.genomic_coordinates.start 
+    });
+    d3.selectAll('g').append('text').attr('y',"6em").text(function(band){ 
+      return "Stop Coordinate: "+ band.genomic_coordinates.stop 
+    });
+    d3.selectAll('g').append('text').attr('y',"7em").text(function(band){ 
+      return "Density (BPHS): "+ band.density 
+    });
 
     // format arms and bands
     d3.selectAll('rect')
